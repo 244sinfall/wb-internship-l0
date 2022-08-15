@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Order Data Searcher</title>
+    <link rel="stylesheet" href="/frontend/style.css">
+    <script defer src="/frontend/index.js"></script>
+</head>
+<body>
+    <header>
+        <h1><a id="main-page-link" href="/">Orders Data Searcher</a></h1>
+        <form id="search-form">
+            <div id="search-bar">
+                <label for="order-input">Enter ID to search:</label>
+                <input type="text" placeholder="Order UID..." id="order-input"/>
+            </div>
+            <div id="options">
+                <div id="checkbox">
+                    <label for="db-search">Search DB too</label>
+                    <input id="db-search" type="checkbox"/>
+                </div>
+                <input type="submit" value="Search">
+            </div>
+        </form>
+    </header>
+</body>
+<main>
+    {{if .}}
+    <p id="cached-items">Cached Items:</p>
+    <ul>
+    {{range $key, $value := .}}
+        <li><p id="li-id">{{$value.OrderUid}}</p><p id="li-date">{{$value.DateCreated}}</p></li>
+    {{end}}
+    </ul>
+    {{end}}
+</main>
+</html>

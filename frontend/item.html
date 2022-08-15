@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Inspecting order #{{.OrderUid}}</title>
+  <link rel="stylesheet" href="/frontend/style.css">
+  <script defer src="/frontend/index.js"></script>
+</head>
+<body>
+<header>
+  <h1><a id="main-page-link" href="/">Orders Data Searcher</a></h1>
+  <form id="search-form">
+    <div id="search-bar">
+      <label for="order-input">Enter ID to search:</label>
+      <input type="text" placeholder="Order UID..." id="order-input"/>
+    </div>
+    <div id="options">
+      <div id="checkbox">
+        <label for="db-search">Search DB too</label>
+        <input id="db-search" type="checkbox"/>
+      </div>
+      <input type="submit" value="Search">
+    </div>
+  </form>
+</header>
+<main>
+  {{if .OrderUid}}
+  <article class="content">
+    <div class="block-info">
+      <p class="info-title">Order Info:</p>
+      <p class="info-blob">Order UID: {{.OrderUid}}</p>
+      <p class="info-blob">Track Number: {{.TrackNumber}}</p>
+      <p class="info-blob">Entry: {{.Entry}}</p>
+      <p class="info-blob">Locale: {{.Locale}}</p>
+      <p class="info-blob">Internal Signature: {{.InternalSignature}}</p>
+      <p class="info-blob">Customer ID: {{.CustomerId}}</p>
+      <p class="info-blob">Delivery Service: {{.DeliveryService}}</p>
+      <p class="info-blob">Shardkey: {{.Shardkey}}</p>
+      <p class="info-blob">SM ID: {{.SmId}}</p>
+      <p class="info-blob">Date Created: {{.DateCreated}}</p>
+      <p class="info-blob">Oof Shard: {{.OofShard}}</p>
+    </div>
+    <div class="block-info">
+      <p class="info-title">Delivery Info:</p>
+      <p class="info-blob">Name: {{.Delivery.Name}}</p>
+      <p class="info-blob">Phone: {{.Delivery.Phone}}</p>
+      <p class="info-blob">ZIP-Code: {{.Delivery.Zip}}</p>
+      <p class="info-blob">City: {{.Delivery.City}}</p>
+      <p class="info-blob">Address: {{.Delivery.Address}}</p>
+      <p class="info-blob">Region: {{.Delivery.Region}}</p>
+      <p class="info-blob">E-Mail: {{.Delivery.Email}}</p>
+    </div>
+    <div class="block-info">
+      <p class="info-title">Payment Info:</p>
+      <p class="info-blob">Transaction: {{.Payment.Transaction}}</p>
+      <p class="info-blob">Request ID: {{.Payment.RequestId}}</p>
+      <p class="info-blob">Currency: {{.Payment.Currency}}</p>
+      <p class="info-blob">Provider: {{.Payment.Provider}}</p>
+      <p class="info-blob">Amount: {{.Payment.Amount}}</p>
+      <p class="info-blob">Payment Date: <span class="unix-time">{{.Payment.PaymentDt}}</span></p>
+      <p class="info-blob">Bank: {{.Payment.Bank}}</p>
+      <p class="info-blob">Delivery Cost: {{.Payment.DeliveryCost}}</p>
+      <p class="info-blob">Goods Total: {{.Payment.GoodsTotal}}</p>
+      <p class="info-blob">Custom Fee: {{.Payment.CustomFee}}</p>
+    </div>
+  </article>
+  <article class="block-info">
+    <p class="info-title">Items Info:</p>
+    <div class="items-container">
+    {{range .Items}}
+      <div class="block-info">
+        <p class="info-title">Item Chart ID: {{.ChrtId}}</p>
+        <p class="info-blob">Track Number: {{.TrackNumber}}</p>
+        <p class="info-blob">Price: {{.Price}}</p>
+        <p class="info-blob">RID: {{.Rid}}</p>
+        <p class="info-blob">Name: {{.Name}}</p>
+        <p class="info-blob">Sale: {{.Sale}}</p>
+        <p class="info-blob">Size: {{.Size}}</p>
+        <p class="info-blob">Total Price: {{.TotalPrice}}</p>
+        <p class="info-blob">NM ID: {{.NmId}}</p>
+        <p class="info-blob">Brand: {{.Brand}}</p>
+        <p class="info-blob">Status: {{.Status}}</p>
+      </div>
+    {{end}}
+    </div>
+  </article>
+  {{else}}
+  <p id="not-found">Item not found!</p>
+  {{end}}
+</main>
+</body>
+</html>
