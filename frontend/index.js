@@ -4,7 +4,9 @@ document.getElementById('search-form').addEventListener('submit', (e) => {
     const orderId = document.getElementById('order-input').value
     const searchDb = document.getElementById('db-search').checked
     if(orderId) {
-        window.location.href = `../orders/${orderId}`
+        let path = `../orders/${orderId}`
+        if(searchDb) path+='?db'
+        window.location.href = path
     }
 })
 

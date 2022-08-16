@@ -10,7 +10,6 @@ import (
 
 func main() {
 	persistence := startSession()
-	persistence.subscribe()
 	fmt.Println("Now you can execute commands...")
 	cmdReader := bufio.NewReader(os.Stdin)
 	for {

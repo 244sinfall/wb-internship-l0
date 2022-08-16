@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/nats-io/stan.go"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -67,9 +68,10 @@ type Cache struct {
 }
 
 type Persistence struct {
-	natsConnection   stan.Conn
-	natsSubscription stan.Subscription
+	natsConnection   *stan.Conn
+	natsSubscription *stan.Subscription
 	dbConnection     *sql.DB
-	httpServer       http.Server
+	httpServer       *http.Server
+	httpWaitGroup    *sync.WaitGroup
 	cache            Cache
 }
