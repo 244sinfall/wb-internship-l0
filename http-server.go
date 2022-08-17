@@ -33,8 +33,7 @@ func (p *Persistence) getItem(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("Use / to search items"))
 	}
 }
-func (p *Persistence) showMainPage(w http.ResponseWriter, r *http.Request) {
-
+func (p *Persistence) showMainPage(w http.ResponseWriter, _ *http.Request) {
 	fp := path.Join("frontend", "index.html")
 	tmpl, _ := template.ParseFiles(fp)
 	err := tmpl.Execute(w, p.cache.messages)
