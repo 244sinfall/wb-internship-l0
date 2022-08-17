@@ -280,6 +280,9 @@ func (p *Persistence) setupNatsConnection() {
 		connection, err := stan.Connect(natsClusterId, natsClientId, stan.Pings(3, 5),
 			stan.SetConnectionLostHandler(p.onNatsConnectionBreakdown))
 		if err != nil {
+			if strings.Contains(err.Error(), "already registered") {
+				break
+			}
 			fmt.Println("Unable to start session with nats-streaming. Error: " + err.Error())
 			fmt.Println("Will restart in 3 seconds...")
 			time.Sleep(3 * time.Second)
