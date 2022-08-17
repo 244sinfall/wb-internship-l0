@@ -4,7 +4,7 @@ const (
 	psqlHost     = "localhost"
 	psqlPort     = 5432
 	psqlDatabase = "nats_streaming_db"
-	psqlUser     = "postgres"
+	psqlUser     = "dimawb"
 	psqlPassword = "123qweFds"
 )
 
