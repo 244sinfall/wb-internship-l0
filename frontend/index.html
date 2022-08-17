@@ -24,14 +24,25 @@
         </form>
     </header>
 </body>
-<main>
+<main class="main-page-main">
     {{if .}}
     <p id="cached-items">Cached Items:</p>
-    <ul>
-    {{range $key, $value := .}}
-        <li><p id="li-id">{{$value.OrderUid}}</p><p id="li-date">{{$value.DateCreated}}</p></li>
-    {{end}}
-    </ul>
+    <table>
+        <tr>
+            <th>Order UID</th>
+            <th>Date created</th>
+        </tr>
+        {{range $key, $value := .}}
+        <tr>
+            <td>
+                <a href="/orders/" class="cache-item-link">{{$value.OrderUid}}</a>
+            </td>
+            <td>
+                {{$value.DateCreated}}
+            </td>
+        </tr>
+        {{end}}
+    </table>
     {{end}}
 </main>
 </html>

@@ -1,4 +1,6 @@
 
+
+
 document.getElementById('search-form').addEventListener('submit', (e) => {
     e.preventDefault()
     const orderId = document.getElementById('order-input').value
@@ -9,6 +11,10 @@ document.getElementById('search-form').addEventListener('submit', (e) => {
         window.location.href = path
     }
 })
+
+for(let item of document.querySelectorAll('.cache-item-link')) {
+    item.href += item.innerHTML
+}
 
 for(let item of document.querySelectorAll(".unix-time")) {
     item.innerHTML = new Date(Number(item.innerHTML * 1000)).toLocaleDateString("en-US")

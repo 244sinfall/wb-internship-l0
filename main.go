@@ -6,10 +6,17 @@ import (
 	_ "github.com/lib/pq"
 	"os"
 	"strings"
+	"time"
 )
 
 func main() {
 	persistence := startSession()
+	go func() {
+		for {
+			time.Sleep(3 * time.Second)
+			persistence.checkHeartbeat()
+		}
+	}()
 	fmt.Println("Now you can execute commands...")
 	cmdReader := bufio.NewReader(os.Stdin)
 	for {

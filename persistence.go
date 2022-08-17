@@ -6,10 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/bxcodec/faker"
 	"github.com/nats-io/stan.go"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -92,6 +95,26 @@ func (p *Persistence) getItemFromDb(orderUid string) (Message, error) {
 	}
 }
 
+func (p *Persistence) publishWrong() {
+	var randomString string
+	var random struct {
+		hello string
+		world string
+	}
+	var randomInt int
+	err := faker.FakeData(&random)
+	byteStruct, _ := json.Marshal(random)
+	err = faker.FakeData(&randomString)
+	err = faker.FakeData(&randomInt)
+	err = (*p.natsConnection).Publish(subjectName, byteStruct)
+	err = (*p.natsConnection).Publish(subjectName, []byte(randomString))
+	err = (*p.natsConnection).Publish(subjectName, []byte(string(rune(randomInt))))
+	if err != nil {
+		return
+	}
+
+}
+
 func (p *Persistence) publishModel() {
 	jsonFile, err := os.Open("model.json")
 	byteValue, err := ioutil.ReadAll(jsonFile)
@@ -105,8 +128,18 @@ func (p *Persistence) executeCommand(command string) error {
 	switch {
 	case command == "publishmodel":
 		p.publishModel()
-	case command == "publish":
-		p.publish(1000)
+	case command == "publishwrong":
+		p.publishWrong()
+	case strings.Contains(command, "publish"):
+		_, a, found := strings.Cut(command, " ")
+		if !found {
+			return errors.New("command does not exist. Check 'help' for more info")
+		}
+		intAmount, err := strconv.Atoi(a)
+		if err != nil {
+			return errors.New("command does not exist. Check 'help' for more info")
+		}
+		p.publish(intAmount)
 	case command == "quit":
 		p.closeSession()
 	case command == "http":
@@ -117,9 +150,21 @@ func (p *Persistence) executeCommand(command string) error {
 			p.startHTTPServer()
 			fmt.Println("HTTP server connected.")
 		}
+	case command == "fakebreak":
+		fmt.Println("Force disconnecting DB and wait 5 seconds:")
+		_ = p.dbConnection.Close()
+		time.Sleep(5 * time.Second)
+		fmt.Println("Force nats-streaming disconnect:")
+		_ = (*p.natsConnection).Close()
+		time.Sleep(5 * time.Second)
+		fmt.Println("Force nats subscription disconnect:")
+		_ = (*p.natsSubscription).Close()
+		time.Sleep(5 * time.Second)
+		fmt.Println("Service should be completely rebuilt by finishing this check.")
 	case command == "help":
 		fmt.Println("publish [amount] - generate and publish [amount] random messages to stream")
-		fmt.Println("checkpsql - return numbers of records stored in psql")
+		fmt.Println("publishmodel - publish data from model.json file")
+		fmt.Println("publishwrong - publish set of non-relevant data")
 		fmt.Println("fakebreak - imitate service breakdown with data restore")
 		fmt.Println("http - runs/stops http server to get data from cache")
 		fmt.Println("quit - exit session")
@@ -134,6 +179,9 @@ func (p *Persistence) subscribe() {
 		subscription, err := (*p.natsConnection).Subscribe(subjectName, p.handleMessage)
 		if err != nil {
 			fmt.Println("Subscription failed with error: " + err.Error())
+			if err == stan.ErrConnectionClosed {
+				p.breakdown(p.natsConnection)
+			}
 			fmt.Println("Retry in 3 seconds...")
 			time.Sleep(3 * time.Second)
 			continue
@@ -171,13 +219,23 @@ func (p *Persistence) closeSession() {
 func (p *Persistence) handleMessage(m *stan.Msg) {
 	var newMessage Message
 	err := json.Unmarshal(m.Data, &newMessage)
+	if newMessage.OrderUid == "" || newMessage.Payment.Transaction == "" || newMessage.Delivery.Phone == "" {
+		fmt.Println("Vital data not provided. Item was not saved. Probably garbage item published:")
+		fmt.Println(newMessage)
+		return
+	}
 	if err != nil {
 		fmt.Println("Error parsing message to given model: " + err.Error())
 		return
 	}
 	go func() {
-		query := fmt.Sprintf("CALL add_message('%s')", string(m.Data))
-		_, _ = p.dbConnection.Exec(query)
+		for {
+			query := fmt.Sprintf("CALL add_message('%s')", string(m.Data))
+			_, err = p.dbConnection.Exec(query)
+			if err == nil {
+				break
+			}
+		}
 	}()
 	p.cache.add(newMessage)
 	if err != nil {
@@ -206,7 +264,8 @@ func (p *Persistence) startHTTPServer() {
 	go func() {
 		defer p.httpWaitGroup.Done()
 		if err := p.httpServer.ListenAndServe(); err != http.ErrServerClosed {
-			fmt.Println("Error occured to HTTP connection: " + err.Error())
+			fmt.Println("Error occured to HTTP connection. Trying to rebuild... Reason: " + err.Error())
+			go p.breakdown(p.httpServer)
 		}
 	}()
 }
@@ -218,7 +277,8 @@ func (p *Persistence) isHTTPServerAlive() bool {
 
 func (p *Persistence) setupNatsConnection() {
 	for {
-		connection, err := stan.Connect(natsClusterId, natsClientId)
+		connection, err := stan.Connect(natsClusterId, natsClientId, stan.Pings(3, 5),
+			stan.SetConnectionLostHandler(p.onNatsConnectionBreakdown))
 		if err != nil {
 			fmt.Println("Unable to start session with nats-streaming. Error: " + err.Error())
 			fmt.Println("Will restart in 3 seconds...")
@@ -267,6 +327,41 @@ func (p *Persistence) setupDbConnection() {
 			p.dbConnection = dbConnection
 			return
 		}
+	}
+}
+
+func (p *Persistence) breakdown(reason interface{}) {
+	switch reason {
+	case p.natsConnection:
+		p.setupNatsConnection()
+		fmt.Println("Nats-streaming connection rebuilt.")
+	case p.dbConnection:
+		p.setupDbConnection()
+		fmt.Println("DB connection rebuilt.")
+	case p.natsSubscription:
+		p.subscribe()
+		fmt.Println("Nats subscription reestablished.")
+	case p.httpServer:
+		p.startHTTPServer()
+		fmt.Println("HTTP server reestablished.")
+	}
+}
+
+func (p *Persistence) onNatsConnectionBreakdown(_ stan.Conn, reason error) {
+	fmt.Println("Nats-streaming connection lost. Trying to rebuild... Reason: " + reason.Error())
+	go p.breakdown(p.natsConnection)
+}
+
+func (p *Persistence) checkHeartbeat() {
+	// Check heartbeat is on 3 seconds interval
+	err := p.dbConnection.Ping()
+	if err != nil {
+		fmt.Println("DB connection lost. Trying to rebuild... Reason: " + err.Error())
+		p.breakdown(p.dbConnection)
+	}
+	if !(*p.natsSubscription).IsValid() {
+		fmt.Println("Nats subscription lost. Trying to rebuild...")
+		p.breakdown(p.natsSubscription)
 	}
 }
 

@@ -8,6 +8,21 @@ a#main-page-link {
     color: wheat;
 }
 
+.main-page-main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+th, td {
+    padding: 5px;
+    border: 1px solid black;
+}
+
+#cached-items {
+    font-size: 16px;
+    font-weight: 700;
+}
 .info-title {
     background: black;
     color: wheat;

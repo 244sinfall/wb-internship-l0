@@ -34,21 +34,12 @@ func (p *Persistence) getItem(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func (p *Persistence) showMainPage(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
-		fp := path.Join("frontend", "index.html")
-		tmpl, _ := template.ParseFiles(fp)
-		err := tmpl.Execute(w, p.cache.messages)
-		if err != nil {
-			w.WriteHeader(500)
-			_, _ = w.Write([]byte("Something went wrong on building a page"))
-		}
+
+	fp := path.Join("frontend", "index.html")
+	tmpl, _ := template.ParseFiles(fp)
+	err := tmpl.Execute(w, p.cache.messages)
+	if err != nil {
+		w.WriteHeader(500)
+		_, _ = w.Write([]byte("Something went wrong on building a page"))
 	}
 }
-
-//func getItem(w http.ResponseWriter, r *http.Request) {
-//	fmt.Printf("got /hello request\n")
-//	_, err := io.WriteString(w, "Hello, HTTP!\n")
-//	if err != nil {
-//		return
-//	}
-//}
